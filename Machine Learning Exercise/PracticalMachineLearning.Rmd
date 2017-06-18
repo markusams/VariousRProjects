@@ -1,0 +1,76 @@
+---
+title: "PracticalMachineLearning"
+output: html_document
+---
+
+# Introduction
+This report describes a prediction model to predict how well a certain exercise is done based on a variety of parameters. 
+
+```{r,include=FALSE}
+library(caret)
+library(randomForest)
+library(rpart)
+```
+
+# Read Data
+First, we need to read the data from our working directory (the download was done manually already)
+```{r}
+training <- read.csv("pml-training.csv",na.strings=c('','NA'))
+validation <- read.csv("pml-testing.csv",na.strings=c('','NA'))
+```
+
+# Analysis
+1. Question: Can we recognize 4 different mistakes typically being made in the Uniliteral Dumbbell Biceps Curl exercise based on activity recognition techinques
+2. Input Data. We used the input data collected by Velloso et al.: http://groupware.les.inf.puc-rio.br/har. The data was already divided into training and testing sets which were re-used as they were. Each line in the set has a "classe" column, where "A" stands for the correctly executed exercise while B through E stand for 4 common errors. Find more information on those errors in the link provided above.
+We notice that there are a lot of NA values in the data. To reduce that number we remove all the columns with "NA" vales. We also remove some columns that are obviously irrelevant for the question of this analysis, e.g. the user name. 
+
+```{r}
+training.nona <- training[ , colSums(is.na(training)) == 0]
+training.nona <- training.nona[, -which(names(training.nona) %in% c('X', 'user_name', 'raw_timestamp_part_1', 'raw_timestamp_part_2', 'cvtd_timestamp', 'new_window', 'num_window'))]
+dim(training.nona)
+```
+
+This leaves us with 19622 observations of 53 variables. We will now split the training set into a training a test set so that we can use the original test set for cross-validation later. 
+
+```{r}
+inTrain <- createDataPartition(training.nona$classe, p= 0.75, list=FALSE)
+training <- training.nona[inTrain,]
+testing <- training.nona[-inTrain,]
+```
+
+This leaves us with three datasets: testing, training and validation.
+
+3. Features: As the amount of raw features is very large (85) it is impossible to do feature selection manually. To solve this we are using principal component analysis (PCA) for pre-processing the data set. PCA shows that 20 components are needed to capture 90 percent of the variance.
+
+```{r}
+preProcess(training,method="pca",thres=.9)
+```
+
+4. Algorithm: The question asked in this analysis is a classification question, which is why we are going to use classification trees to model the data. We will specifically look at the rpart method for a simple tree and at random forests (rf) for a more complex approach with bootstrapping.
+
+```{r, warning=FALSE}
+model.rpart <- train(classe ~ ., method="rpart",preProcess="pca",data=training)
+model.rf <- train(classe ~ ., method="rf",preProcess="pca",data=training)
+```
+
+5. Cross Validation: We are cross validating the two models to find the better one. To do this we are comparing their predictions for the testing set by looking at the confusion matrix of each prediction.
+```{r, warnings=FALSE}
+pred.rpart <- predict(model.rpart,newdata=testing)
+pred.rf <- predict(model.rf,newdata=testing)
+cm.rpart <- confusionMatrix(pred.rpart,testing$classe)
+cm.rf <- confusionMatrix(pred.rf,testing$classe)
+cm.rpart$table
+cm.rpart$overall[1]
+cm.rf$table
+cm.rf$overall[1]
+```
+What we see in the result is a very good prediction model (the random forest model) and a very bad one (the rpart one). The random forest model reaches an accuracy of 97.8 % on the testing set and seems to be do quite well on all 5 classes while the rpart model performs especially poorly on class B and class C and reaches an overall accuracy of less than 40 %. Therefore we will use the random forest model to predict the validation set.
+
+# Conclusion
+We conclude that the random forest model predicts the outcome with good accuracy and therefore use it to predict the outcome of the validation data set.
+
+```{r}
+predict(model.rf, newdata=validation)
+```
+
+These answers were used to submit to the quiz part of the assignment and resulted in an accuracy of 95 % (19/20). Based on the accuracy mentioned above this seems to be a reasonable result.

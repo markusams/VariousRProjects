@@ -1,0 +1,25 @@
+---
+title: "World Capital Map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(leaflet)
+```
+
+Date: 1st of March, 2017
+
+This map was created for the first assignment of Coursera's "Developing Data Products" class. It displays the capitals of the world color coded by continent. The country and city names are displayed when clicking on one of the capitals.
+
+```{r, echo=FALSE, results='hide',warning=FALSE}
+capitals <- read.csv("country-capitals.csv")
+capitals <- mutate(capitals,name = paste(CountryName, CapitalName, sep = " ")) %>% select(CapitalLatitude, CapitalLongitude, ContinentName, name)
+colnames(capitals) <- c("lat","lng","continent","label")
+factpal <- colorFactor("Paired", capitals$continent)
+map <- capitals %>% leaflet() %>% addTiles() %>% addCircleMarkers(popup = capitals$label, color=~factpal(continent),radius=1,lat=~lat,lng=~lng) %>% addLegend("bottomright",pal=factpal,values=capitals$continent, title="World Capitals")
+```
+```{r, echo=FALSE}
+map
+```

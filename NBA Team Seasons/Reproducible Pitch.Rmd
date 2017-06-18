@@ -1,0 +1,45 @@
+---
+title: "NBA team seasons"
+date: "15-03-2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+require(ggplot2)
+require(dplyr)
+```
+
+## Introduction
+
+This presentation was created to be a reproducible pitch for the week 4 assignment of Coursera's "Developing Data Products Course". It will explain the accompanying NBA Team Seasons web app.
+The web app uses win / loss data from National Basketball Association (NBA) teams between 1949 and 2009. This data was obtained from www.databasketball.com.
+
+## Features of the web app
+
+The web app consists of several features:
+
+1. Graphical comparison of the total wins per season between two teams
+2. Average win comparison of the total wins per season between two teams
+3. Adjustable time scale (in years) for the two comparisons mentioned above
+4. Ranking of all NBA teams by total wins in an adjustable time scale
+
+## The data
+
+The data used for this webapp contains data on all seasons of the National Basketball Association by team. There are many different statistics on each team, but for this webapp only the team, the year and the amount of wins were relevant.
+
+```{r data, echo = TRUE}
+t_s <- read.csv("team_season.csv",sep=",")
+colnames(t_s)[1] <- "team"
+head(t_s[,c("team","year","won")])
+dim(t_s[,c("team","year","won")])
+```
+
+## Example of the plot
+
+The following plot shows the wins of the Los Angeles Lakers (LAL) and Boston Celtics (BOS) between the years 1980 and 2000.
+
+```{r pressure}
+ggplot(subset(t_s,(team %in% c("LAL", "BOS")) & year < 2000 & year >1980),aes(x=year,y=won,color=team))+geom_line()+geom_point()
+```
+

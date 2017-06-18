@@ -1,0 +1,26 @@
+---
+title: "School Map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Geocode with google
+```{r}
+library(ggmap)
+library(dplyr)
+```
+
+```{r}
+data <- read.csv("VoortgezetOnderwijs_source.csv", sep=";")
+data <- data[-c(1,2,8:19)]
+data2 <- mutate(data,school=paste(VESTIGINGSNUMMER, VESTIGINGSNAAM, sep= " "),address = paste(ADRES.VESTIGING,POSTCODE.VESTIGING,PLAATSNAAM.VESTIGING, sep=" ")) %>% select(VESTIGINGSNUMMER, VESTIGINGSNAAM, school,address)
+l <- geocode(data2$address,output="latlon",source="google")
+data2$lat <- l$lat
+data2$lon <- l$lon
+map <- data2 %>% leaflet() %>% addTiles() %>% addCircleMarkers(popup = data2$school)
+```

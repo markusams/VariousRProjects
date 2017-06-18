@@ -1,0 +1,67 @@
+---
+title: "Statistical Inference - Tooth Growth Data"
+output: pdf_document
+---
+
+Markus Divjak
+
+```{r,include=FALSE}
+library(datasets)
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+```
+
+## Overview
+The following report analysis the tooth growth data that is delivered as part of the datasets package of R. The content of the dataset is the length of teeth of 60 guinea pigs who have received a supplement. The supplement was received in two different types with three different dosages each. More information about the dataset can be found under https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/ToothGrowth.html.
+The following document shows some exploratory data analysis followed by a test on whether the tooth length can be related to the supplement type or dosage.
+
+## Tooth Growth Data in R
+After loading the tooth growth data we run some basic exploratory analysis.
+```{r}
+data("ToothGrowth")
+ToothGrowth$dose <- factor(ToothGrowth$dose)
+summary(ToothGrowth)
+```
+
+What we can see from the summary of the data is that the mean of the tooth length is 19, that there are two different supplements and that the there are 3 discrete levels of doses: 0.5, 1.0 and 2.0. Below charts show the tooth size when compared to the the supplements and the different levels of dose.
+
+```{r, fig.height=4}
+ToothGrowth <- mutate(ToothGrowth,combine=paste(supp,dose,sep=" "))
+p1 <- qplot(dose, len, data=ToothGrowth, color=supp, size= 6,xlab="Dose",ylab="Length",main="Length by Dose")
+p2 <- qplot(supp,len, data=ToothGrowth, color=dose, size=6,xlab="Supplement", ylab="Length", main="Length by Supplement")
+p3 <- qplot(combine,len,data=ToothGrowth, color=supp, size=6, ylab="Length", xlab="Supplement and Dose", main="Length by Supplement and Dose")
+p4 <- ggplot(ToothGrowth, aes(x=len, fill=combine)) + geom_histogram(colour="black", binwidth=5) + facet_grid(combine ~ .) + ggtitle("Length by supplement and Dose") + xlab("Length") + theme(legend.position="none")
+p1
+p2
+p3
+p4
+```
+
+The plots seem to suggest that there is a relationship between the dose and the length while there seems to be no (or a much weaker) relationship between the supplement and the length. Therefore we will test the relationship between length and dose in the following chapter.
+
+## Effects of Dose on Length
+To investigate the effect of dose on length we run three t-tests comparing the different levels of dose to each other.
+```{r}
+ToothGrowth_sub <- subset(ToothGrowth, ToothGrowth$dose %in% c(0.5,1))
+t.test(len ~ dose,data=ToothGrowth_sub)
+ToothGrowth_sub <- subset(ToothGrowth, ToothGrowth$dose %in% c(1,2))
+t.test(len ~ dose,data=ToothGrowth_sub)
+ToothGrowth_sub <- subset(ToothGrowth, ToothGrowth$dose %in% c(0.5,2))
+t.test(len ~ dose,data=ToothGrowth_sub)
+```
+As you can see the p-values of those three tests are all essentially zero and the confidence intervals do not contain 0. Therefore we can safely reject the null hypothesis and conclude that the dose has a positive effect on the length of a tooth.
+
+For completeness sake we also run a t-test for the relationship between length and supplement
+```{r}
+t.test(len ~ supp,data=ToothGrowth)
+```
+The p-value of 0.06 or 6 % suggests that we should not reject the null hypothesis that the supplement does not have any influence on the length.
+
+## Conclusion
+Under the following assumptions
+
+1. The sample dataset is representative of the population
+2. The distribution of the sample means follows the CLT
+We can conclude that the supplement ttype does not have significant influence on the length of tooth. However, the tooth length increases with an increase in dose.
+
